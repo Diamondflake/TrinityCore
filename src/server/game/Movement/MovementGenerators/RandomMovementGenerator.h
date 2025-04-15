@@ -49,7 +49,6 @@ class RandomMovementGenerator : public MovementGeneratorMedium<T, RandomMovement
     private:
         void SetRandomLocation(T*);
 
-        std::unique_ptr<PathGenerator> _path;
         TimeTracker _timer;
         Position _reference;
         float _wanderDistance;
@@ -57,7 +56,11 @@ class RandomMovementGenerator : public MovementGeneratorMedium<T, RandomMovement
 
     #if DONT_CACHE_RANDOM_MOVEMENT_PATHS == 0
 
-        Position _randomPoints[RANDOM_MOVEMENT_POINTS];
+        std::unique_ptr<PathGenerator> _paths[(RANDOM_MOVEMENT_POINTS + 1) * RANDOM_MOVEMENT_POINTS];
+
+    #else
+
+        std::unique_ptr<PathGenerator> _path;
 
     #endif
 };
