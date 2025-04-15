@@ -18,6 +18,9 @@
 #ifndef TRINITY_RANDOMMOTIONGENERATOR_H
 #define TRINITY_RANDOMMOTIONGENERATOR_H
 
+#define DONT_CACHE_RANDOM_MOVEMENT_PATHS    0
+#define RANDOM_MOVEMENT_POINTS              5
+
 #include "MovementGenerator.h"
 #include "Position.h"
 #include "Timer.h"
@@ -51,6 +54,12 @@ class RandomMovementGenerator : public MovementGeneratorMedium<T, RandomMovement
         Position _reference;
         float _wanderDistance;
         uint8 _wanderSteps;
+
+    #if DONT_CACHE_RANDOM_MOVEMENT_PATHS == 0
+
+        Position _randomPoints[RANDOM_MOVEMENT_POINTS];
+
+    #endif
 };
 
 #endif
