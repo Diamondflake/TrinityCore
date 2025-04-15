@@ -86,6 +86,14 @@ void RandomMovementGenerator<Creature>::DoInitialize(Creature* owner)
     if (_wanderDistance == 0.f)
         _wanderDistance = owner->GetWanderDistance();
 
+#if DONT_CACHE_RANDOM_MOVEMENT_PATHS == 0
+
+    for(int i = 0; i < RANDOM_MOVEMENT_POINTS; i++) {
+        _randomPoints[i] =
+    }
+
+#endif
+
     // Retail seems to let a creature walk 2 up to 10 splines before triggering a pause
     _wanderSteps = urand(1, ((_wanderDistance <= 1.0f) ? 2 : 8));
 
@@ -121,6 +129,8 @@ void RandomMovementGenerator<Creature>::SetRandomLocation(Creature* owner)
         return;
     }
 
+#if DONT_CACHE_RANDOM_MOVEMENT_PATHS == 1
+
     Position position(_reference);
     float distance = frand(0.f, _wanderDistance);
     float angle = frand(0.f, float(M_PI * 2));
@@ -149,6 +159,13 @@ void RandomMovementGenerator<Creature>::SetRandomLocation(Creature* owner)
         _timer.Reset(100);
         return;
     }
+
+#else
+
+
+
+
+#endif
 
     RemoveFlag(MOVEMENTGENERATOR_FLAG_TRANSITORY | MOVEMENTGENERATOR_FLAG_TIMED_PAUSED);
 
