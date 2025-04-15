@@ -88,9 +88,48 @@ void RandomMovementGenerator<Creature>::DoInitialize(Creature* owner)
 
 #if DONT_CACHE_RANDOM_MOVEMENT_PATHS == 0
 
-    for(int i = 0; i < RANDOM_MOVEMENT_POINTS; i++) {
-        _randomPoints[i] =
-    }
+    // i is the point currently being set; Several loops may be made with the same i
+    int i = 0;
+    Position position;
+    while (i < RANDOM_MOVEMENT_POINTS)) {
+
+        position = position(_reference);
+        float distance = frand(0.f, _wanderDistance);
+        float angle = i * (2.f / RANDOM_MOVEMENT_POINTS) + frand(0.f, float(M_PI * (2.f / RANDOM_MOVEMENT_POINTS)));
+        
+        owner->MovePositionToFirstCollision(position, distance, angle);
+    
+        // Check if the destination is in LOS
+        while (!owner->IsWithinLOS(position.GetPositionX(), position.GetPositionY(), position.GetPositionZ())) {
+            // If the position is not suitable, instead of retrying the entire process, distance is halved
+            // to eventually find a suitable position (since the current position of the mob is being approached)
+            // this should prevent awkward mob placement (e.g. right against a wall) from leading to too many tries
+            distance /= 2.f;
+            position = position(_reference); // needed ? Memory leak ?
+            owner->MovePositionToFirstCollision(position, distance, angle);
+        }
+    
+        if (!_path)
+        {
+            _path = std::make_unique<PathGenerator>(owner);
+            _path->SetPathLengthLimit(30.0f);
+        }
+    
+        bool result = _path->CalculatePath(position.GetPositionX(), position.GetPositionY(), position.GetPositionZ());
+        // PATHFIND_FARFROMPOLY shouldn't be checked as creatures in water are most likely far from poly
+        if (!result || (_path->GetPathType() & PATHFIND_NOPATH)
+                    || (_path->GetPathType() & PATHFIND_SHORTCUT)
+                    /*|| (_path->GetPathType() & PATHFIND_FARFROMPOLY)*/)
+        {
+            continue;
+            // Leaving this as a retry since I don't know how common this case may be
+            // Might need a way to default to a point or something if it happens
+            // too often
+        }
+        
+        _randomPoints[i] = position;
+        i++;
+    }      
 
 #endif
 
@@ -162,8 +201,9 @@ void RandomMovementGenerator<Creature>::SetRandomLocation(Creature* owner)
 
 #else
 
-
-
+    Position position = _randomPoints[urand(0, RANDOM_MOVEMENT_POINTS - 1)];
+    _path->CalculatePath(position.GetPositionX(), position.GetPositionY(), position.GetPositionZ());
+    // Should not be able to fail
 
 #endif
 
