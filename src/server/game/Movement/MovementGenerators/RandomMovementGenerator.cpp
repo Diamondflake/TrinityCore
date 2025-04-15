@@ -95,20 +95,26 @@ void RandomMovementGenerator<Creature>::DoInitialize(Creature* owner)
 
     uint8 i = 1; // point being generated
     uint8 j; // point being used for checks
+    uint8 attempts;
     Position position;
     bool acceptable;
     std::unique_ptr<PathGenerator> path;
     while (i < RANDOM_MOVEMENT_POINTS + 1)) {
 
         position = position(_reference);
-        float distance = frand(0.f, _wanderDistance);
+        float distance = frand(0.f, _wanderDistance * 2); // The * 2 accounts for the distance being halved immediately
         float angle = frand(0.f, float(M_PI * 2));
-        
-        owner->MovePositionToFirstCollision(position, distance, angle);
 
         acceptable = false;
+        attempts = 0;
         while (!acceptable) {
-            acceptable = true;
+            // Number of attempts is theoretically not needed but mght be, or be an alternative to the distance halving
+            // if it proves too much of an issue because it creates many points near the reference in some cases
+            /*if (attempts = TRIES_PER_RANDOM_POINTS) {
+                points[i] = points[i-1]; // exists because points[0] is the reference
+                i++;
+            }*/
+            
             // If the position is not suitable, instead of retrying the entire process, distance is halved
             // to eventually find a suitable position (since the current position of the mob is being approached)
             // this should prevent awkward mob placement (e.g. right against a wall) from leading to too many tries
@@ -121,6 +127,7 @@ void RandomMovementGenerator<Creature>::DoInitialize(Creature* owner)
                 if (!owner->IsWithinLOS(position.GetPositionX(), position.GetPositionY(), position.GetPositionZ())) {
     
                     acceptable = false;
+                    //attempts++;
                     break;
                 }
             }
@@ -142,6 +149,7 @@ void RandomMovementGenerator<Creature>::DoInitialize(Creature* owner)
                                 /*|| (_path->GetPathType() & PATHFIND_FARFROMPOLY)*/)
                     {
                         acceptable = false;
+                        //attempts++;
                         break;
                     }
                 }
