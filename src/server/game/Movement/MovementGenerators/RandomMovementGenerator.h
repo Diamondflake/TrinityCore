@@ -19,6 +19,7 @@
 #define TRINITY_RANDOMMOTIONGENERATOR_H
 
 #define DONT_CACHE_RANDOM_MOVEMENT_PATHS    0
+// With uint_8 the maximum number of movement points is 15 (i.e. 16 * 15 paths due to the origin)
 #define RANDOM_MOVEMENT_POINTS              5
 
 #include "MovementGenerator.h"
@@ -57,7 +58,9 @@ class RandomMovementGenerator : public MovementGeneratorMedium<T, RandomMovement
     #if DONT_CACHE_RANDOM_MOVEMENT_PATHS == 0
 
         std::unique_ptr<PathGenerator> _paths[(RANDOM_MOVEMENT_POINTS + 1) * RANDOM_MOVEMENT_POINTS];
-        uint8 _currentPathEndPoint;
+        // With uint_8 the maximum number of movement points is 15 (i.e. 16 * 15 paths due to the origin)
+        // Max value is reserved for "no path"
+        uint_8 _currentPathIndex;
 
     #else
 
