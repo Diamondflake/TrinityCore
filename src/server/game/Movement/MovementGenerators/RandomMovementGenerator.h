@@ -22,6 +22,10 @@
 // With uint_8 the maximum number of movement points is 15 (i.e. 16 * 15 paths due to the origin)
 #define RANDOM_MOVEMENT_POINTS              5
 
+#define PAUSE_ODDS                    0.5f
+#define PAUSE_MINIMUM_DURATION_MS     200
+#define PAUSE_MAXIMUM_DURATION_MS     800
+
 #include "MovementGenerator.h"
 #include "Position.h"
 #include "Timer.h"
