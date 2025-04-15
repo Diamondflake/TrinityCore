@@ -107,14 +107,8 @@ void RandomMovementGenerator<Creature>::DoInitialize(Creature* owner)
 
         acceptable = false;
         attempts = 0;
-        while (!acceptable) {
-            // Number of attempts is theoretically not needed but mght be, or be an alternative to the distance halving
-            // if it proves too much of an issue because it creates many points near the reference in some cases
-            /*if (attempts = TRIES_PER_RANDOM_POINTS) {
-                points[i] = points[i-1]; // exists because points[0] is the reference
-                i++;
-            }*/
-            
+        Position point;
+        while (!acceptable) {            
             // If the position is not suitable, instead of retrying the entire process, distance is halved
             // to eventually find a suitable position (since the current position of the mob is being approached)
             // this should prevent awkward mob placement (e.g. right against a wall) from leading to too many tries
@@ -125,9 +119,7 @@ void RandomMovementGenerator<Creature>::DoInitialize(Creature* owner)
             acceptable = true;
             for (j = 0; j < i; j++) {
                 if (!owner->IsWithinLOS(position.GetPositionX(), position.GetPositionY(), position.GetPositionZ())) {
-    
                     acceptable = false;
-                    //attempts++;
                     break;
                 }
             }
@@ -137,24 +129,23 @@ void RandomMovementGenerator<Creature>::DoInitialize(Creature* owner)
             }
 
             // Paths are checked after LoS to avoid expensive path checks when LoS isn't guaranteed already
+            point = points[i]
             for (j = 0; j < i; j++) {
-                // TODO: replace with path check
 
-                path = std::make_unique<PathGenerator>(owner);
+                path = std::make_unique<PathGenerator>(point[j]); // Would making the path from the fixed point be possible and more efficient ?
                 path->SetPathLengthLimit(30.0f);
 
                 // TODO: directly set paths so they don't have to be recalculated in case of success
-                
-                bool result = path->CalculatePath(position.GetPositionX(), position.GetPositionY(), position.GetPositionZ());
+                bool result = path->CalculatePath(point.GetPositionX(), point.GetPositionY(), point.GetPositionZ());
                 // PATHFIND_FARFROMPOLY shouldn't be checked as creatures in water are most likely far from poly
                 if (!result || (path->GetPathType() & PATHFIND_NOPATH)
                             || (path->GetPathType() & PATHFIND_SHORTCUT)
                             /*|| (_path->GetPathType() & PATHFIND_FARFROMPOLY)*/)
                 {
                     acceptable = false;
-                    //attempts++;
                     break;
                 }
+                paths[i * RANDOM_MOVEMENT_POINTS + j] = path;
             }
         }
         
