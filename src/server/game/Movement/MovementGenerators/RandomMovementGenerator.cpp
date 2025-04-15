@@ -93,8 +93,8 @@ void RandomMovementGenerator<Creature>::DoInitialize(Creature* owner)
     Position points[RANDOM_MOVEMENT_POINTS + 1];
     points[0] = _reference;
 
-    int i = 1; // point being generated
-    int j = 0; // point being used for checks
+    uint_8 i = 1; // point being generated
+    uint_8 j; // point being used for checks
     Position position;
     bool acceptable;
     std::unique_ptr<PathGenerator> path;
@@ -102,29 +102,21 @@ void RandomMovementGenerator<Creature>::DoInitialize(Creature* owner)
 
         position = position(_reference);
         float distance = frand(0.f, _wanderDistance);
-        float angle = i * (2.f / RANDOM_MOVEMENT_POINTS) + frand(0.f, float(M_PI * (2.f / RANDOM_MOVEMENT_POINTS)));
+        float angle = frand(0.f, float(M_PI * 2));
         
         owner->MovePositionToFirstCollision(position, distance, angle);
 
-        acceptable = true;
-        for (j = 0; j < i; j++) {
-            if (!owner->IsWithinLOS(position.GetPositionX(), position.GetPositionY(), position.GetPositionZ())) {
-
-                acceptable = false;
-                break;
-            }
-
-            // Add path check
-        }
-
+        acceptable = false;
         while (!acceptable) {
+            acceptable = true;
             // If the position is not suitable, instead of retrying the entire process, distance is halved
             // to eventually find a suitable position (since the current position of the mob is being approached)
             // this should prevent awkward mob placement (e.g. right against a wall) from leading to too many tries
             distance /= 2.f;
             position = position(_reference); // needed ? Memory leak ?
             owner->MovePositionToFirstCollision(position, distance, angle);
-            
+
+            acceptable = true;
             for (j = 0; j < i; j++) {
                 if (!owner->IsWithinLOS(position.GetPositionX(), position.GetPositionY(), position.GetPositionZ())) {
     
@@ -132,21 +124,28 @@ void RandomMovementGenerator<Creature>::DoInitialize(Creature* owner)
                     break;
                 }
             }
-        }
 
-        path = std::make_unique<PathGenerator>(owner);
-        path->SetPathLengthLimit(30.0f);
-    
-        bool result = path->CalculatePath(position.GetPositionX(), position.GetPositionY(), position.GetPositionZ());
-        // PATHFIND_FARFROMPOLY shouldn't be checked as creatures in water are most likely far from poly
-        if (!result || (path->GetPathType() & PATHFIND_NOPATH)
-                    || (path->GetPathType() & PATHFIND_SHORTCUT)
-                    /*|| (_path->GetPathType() & PATHFIND_FARFROMPOLY)*/)
-        {
-            continue;
-            // Leaving this as a retry since I don't know how common this case may be
-            // Might need a way to default to a point or something if it happens
-            // too often
+            // Paths are checked after LoS to avoid expensive path checks when LoS isn't guaranteed already
+            if (acceptable == true) {
+                for (j = 0; j < i; j++) {
+                    // TODO: replace with path check
+
+                    path = std::make_unique<PathGenerator>(owner);
+                    path->SetPathLengthLimit(30.0f);
+
+                    // TODO: directly set paths so they don't have to be recalculated in case of success
+                
+                    bool result = path->CalculatePath(position.GetPositionX(), position.GetPositionY(), position.GetPositionZ());
+                    // PATHFIND_FARFROMPOLY shouldn't be checked as creatures in water are most likely far from poly
+                    if (!result || (path->GetPathType() & PATHFIND_NOPATH)
+                                || (path->GetPathType() & PATHFIND_SHORTCUT)
+                                /*|| (_path->GetPathType() & PATHFIND_FARFROMPOLY)*/)
+                    {
+                        acceptable = false;
+                        break;
+                    }
+                }
+            }
         }
         
         points[i] = position;
