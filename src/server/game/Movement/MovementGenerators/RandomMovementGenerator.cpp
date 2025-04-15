@@ -88,9 +88,13 @@ void RandomMovementGenerator<Creature>::DoInitialize(Creature* owner)
 
 #if DONT_CACHE_RANDOM_MOVEMENT_PATHS == 0
 
-    // i is the point currently being set; Several loops may be made with the same i
+    // Generate points
+    // Origin will be added later
+    Position points[RANDOM_MOVEMENT_POINTS];
+
     int i = 0;
     Position position;
+    std::unique_ptr<PathGenerator> path;
     while (i < RANDOM_MOVEMENT_POINTS)) {
 
         position = position(_reference);
@@ -108,17 +112,14 @@ void RandomMovementGenerator<Creature>::DoInitialize(Creature* owner)
             position = position(_reference); // needed ? Memory leak ?
             owner->MovePositionToFirstCollision(position, distance, angle);
         }
+
+        path = std::make_unique<PathGenerator>(owner);
+        path->SetPathLengthLimit(30.0f);
     
-        if (!_path)
-        {
-            _path = std::make_unique<PathGenerator>(owner);
-            _path->SetPathLengthLimit(30.0f);
-        }
-    
-        bool result = _path->CalculatePath(position.GetPositionX(), position.GetPositionY(), position.GetPositionZ());
+        bool result = path->CalculatePath(position.GetPositionX(), position.GetPositionY(), position.GetPositionZ());
         // PATHFIND_FARFROMPOLY shouldn't be checked as creatures in water are most likely far from poly
-        if (!result || (_path->GetPathType() & PATHFIND_NOPATH)
-                    || (_path->GetPathType() & PATHFIND_SHORTCUT)
+        if (!result || (path->GetPathType() & PATHFIND_NOPATH)
+                    || (path->GetPathType() & PATHFIND_SHORTCUT)
                     /*|| (_path->GetPathType() & PATHFIND_FARFROMPOLY)*/)
         {
             continue;
@@ -127,9 +128,18 @@ void RandomMovementGenerator<Creature>::DoInitialize(Creature* owner)
             // too often
         }
         
-        _randomPoints[i] = position;
+        points[i] = position;
         i++;
-    }      
+    }
+
+
+    // All paths must exist ! Need to do iteratively as points are created
+    // Generates paths between the chosen points
+
+    
+
+    // i is the point currently being set; Several loops may be made with the same i
+    
 
 #endif
 
@@ -137,7 +147,10 @@ void RandomMovementGenerator<Creature>::DoInitialize(Creature* owner)
     _wanderSteps = urand(1, ((_wanderDistance <= 1.0f) ? 2 : 8));
 
     _timer.Reset(0);
+
+#if DONT_CACHE_RANDOM_MOVEMENT_PATHS == 1
     _path = nullptr;
+#endif
 }
 
 template<class T>
@@ -164,7 +177,9 @@ void RandomMovementGenerator<Creature>::SetRandomLocation(Creature* owner)
     {
         AddFlag(MOVEMENTGENERATOR_FLAG_INTERRUPTED);
         owner->StopMoving();
+#if DONT_CACHE_RANDOM_MOVEMENT_PATHS == 1
         _path = nullptr;
+#endif
         return;
     }
 
@@ -201,10 +216,15 @@ void RandomMovementGenerator<Creature>::SetRandomLocation(Creature* owner)
 
 #else
 
+    // Because we cannot fail to find a new path, we simulate failures 
+    // to have pauses within the movement
+    if (frand(0.f, 1.f) <= PAUSE_ODDS) {
+        _timer.Reset(urand(PAUSE_MINIMUM_DURATION_MS, PAUSE_MAXIMUM_DURATION_MS));
+    }
+
     // There are RANDOM_MOVEMENT_POINTS other points because the _reference is included
-    uint_8 currentPathEndPoint = _currentPathIndex / RANDOM_MOVEMENT_POINTS;
-    uint_8 nextPathEndPoint = urand(0, RANDOM_MOVEMENT_POINTS - 1);
-    _currentPathIndex = currentPathEndPoint * RANDOM_MOVEMENT_POINTS + nextPathEndPoint;
+    // (_currentPathIndex / RANDOM_MOVEMENT_POINTS) = current end point and next starting point
+    _currentPathIndex = (_currentPathIndex / RANDOM_MOVEMENT_POINTS) * RANDOM_MOVEMENT_POINTS + urand(0, RANDOM_MOVEMENT_POINTS - 1);
 
 #endif
 
@@ -269,13 +289,16 @@ bool RandomMovementGenerator<Creature>::DoUpdate(Creature* owner, uint32 diff)
     {
         AddFlag(MOVEMENTGENERATOR_FLAG_INTERRUPTED);
         owner->StopMoving();
+#if DONT_CACHE_RANDOM_MOVEMENT_PATHS == 1
         _path = nullptr;
+#endif
         return true;
     }
     else
         RemoveFlag(MOVEMENTGENERATOR_FLAG_INTERRUPTED);
 
     _timer.Update(diff);
+
     if ((HasFlag(MOVEMENTGENERATOR_FLAG_SPEED_UPDATE_PENDING) && !owner->movespline->Finalized()) || (_timer.Passed() && owner->movespline->Finalized()))
         SetRandomLocation(owner);
 
