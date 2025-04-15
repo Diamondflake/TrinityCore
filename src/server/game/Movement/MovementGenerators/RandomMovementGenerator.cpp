@@ -89,28 +89,49 @@ void RandomMovementGenerator<Creature>::DoInitialize(Creature* owner)
 #if DONT_CACHE_RANDOM_MOVEMENT_PATHS == 0
 
     // Generate points
-    // Origin will be added later
-    Position points[RANDOM_MOVEMENT_POINTS];
+    // Origin included as the first point to be used for checks
+    Position points[RANDOM_MOVEMENT_POINTS + 1];
+    points[0] = _reference;
 
-    int i = 0;
+    int i = 1; // point being generated
+    int j = 0; // point being used for checks
     Position position;
+    bool acceptable;
     std::unique_ptr<PathGenerator> path;
-    while (i < RANDOM_MOVEMENT_POINTS)) {
+    while (i < RANDOM_MOVEMENT_POINTS + 1)) {
 
         position = position(_reference);
         float distance = frand(0.f, _wanderDistance);
         float angle = i * (2.f / RANDOM_MOVEMENT_POINTS) + frand(0.f, float(M_PI * (2.f / RANDOM_MOVEMENT_POINTS)));
         
         owner->MovePositionToFirstCollision(position, distance, angle);
-    
-        // Check if the destination is in LOS
-        while (!owner->IsWithinLOS(position.GetPositionX(), position.GetPositionY(), position.GetPositionZ())) {
+
+        acceptable = true;
+        for (j = 0; j < i; j++) {
+            if (!owner->IsWithinLOS(position.GetPositionX(), position.GetPositionY(), position.GetPositionZ())) {
+
+                acceptable = false;
+                break;
+            }
+
+            // Add path check
+        }
+
+        while (!acceptable) {
             // If the position is not suitable, instead of retrying the entire process, distance is halved
             // to eventually find a suitable position (since the current position of the mob is being approached)
             // this should prevent awkward mob placement (e.g. right against a wall) from leading to too many tries
             distance /= 2.f;
             position = position(_reference); // needed ? Memory leak ?
             owner->MovePositionToFirstCollision(position, distance, angle);
+            
+            for (j = 0; j < i; j++) {
+                if (!owner->IsWithinLOS(position.GetPositionX(), position.GetPositionY(), position.GetPositionZ())) {
+    
+                    acceptable = false;
+                    break;
+                }
+            }
         }
 
         path = std::make_unique<PathGenerator>(owner);
