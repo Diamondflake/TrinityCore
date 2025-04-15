@@ -93,8 +93,8 @@ void RandomMovementGenerator<Creature>::DoInitialize(Creature* owner)
     Position points[RANDOM_MOVEMENT_POINTS + 1];
     points[0] = _reference;
 
-    uint_8 i = 1; // point being generated
-    uint_8 j; // point being used for checks
+    uint8 i = 1; // point being generated
+    uint8 j; // point being used for checks
     Position position;
     bool acceptable;
     std::unique_ptr<PathGenerator> path;
