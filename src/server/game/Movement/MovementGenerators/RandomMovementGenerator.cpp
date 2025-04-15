@@ -132,26 +132,28 @@ void RandomMovementGenerator<Creature>::DoInitialize(Creature* owner)
                 }
             }
 
+            if (!acceptabe) {
+                continue;
+            }
+
             // Paths are checked after LoS to avoid expensive path checks when LoS isn't guaranteed already
-            if (acceptable == true) {
-                for (j = 0; j < i; j++) {
-                    // TODO: replace with path check
+            for (j = 0; j < i; j++) {
+                // TODO: replace with path check
 
-                    path = std::make_unique<PathGenerator>(owner);
-                    path->SetPathLengthLimit(30.0f);
+                path = std::make_unique<PathGenerator>(owner);
+                path->SetPathLengthLimit(30.0f);
 
-                    // TODO: directly set paths so they don't have to be recalculated in case of success
+                // TODO: directly set paths so they don't have to be recalculated in case of success
                 
-                    bool result = path->CalculatePath(position.GetPositionX(), position.GetPositionY(), position.GetPositionZ());
-                    // PATHFIND_FARFROMPOLY shouldn't be checked as creatures in water are most likely far from poly
-                    if (!result || (path->GetPathType() & PATHFIND_NOPATH)
-                                || (path->GetPathType() & PATHFIND_SHORTCUT)
-                                /*|| (_path->GetPathType() & PATHFIND_FARFROMPOLY)*/)
-                    {
-                        acceptable = false;
-                        //attempts++;
-                        break;
-                    }
+                bool result = path->CalculatePath(position.GetPositionX(), position.GetPositionY(), position.GetPositionZ());
+                // PATHFIND_FARFROMPOLY shouldn't be checked as creatures in water are most likely far from poly
+                if (!result || (path->GetPathType() & PATHFIND_NOPATH)
+                            || (path->GetPathType() & PATHFIND_SHORTCUT)
+                            /*|| (_path->GetPathType() & PATHFIND_FARFROMPOLY)*/)
+                {
+                    acceptable = false;
+                    //attempts++;
+                    break;
                 }
             }
         }
