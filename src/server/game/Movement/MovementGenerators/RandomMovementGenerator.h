@@ -57,6 +57,7 @@ class RandomMovementGenerator : public MovementGeneratorMedium<T, RandomMovement
     #if DONT_CACHE_RANDOM_MOVEMENT_PATHS == 0
 
         std::unique_ptr<PathGenerator> _paths[(RANDOM_MOVEMENT_POINTS + 1) * RANDOM_MOVEMENT_POINTS];
+        uint8 _currentPathEndPoint;
 
     #else
 
