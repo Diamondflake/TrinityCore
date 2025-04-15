@@ -64,7 +64,7 @@ class RandomMovementGenerator : public MovementGeneratorMedium<T, RandomMovement
         std::unique_ptr<PathGenerator> _paths[(RANDOM_MOVEMENT_POINTS + 1) * RANDOM_MOVEMENT_POINTS];
         // With uint_8 the maximum number of movement points is 15 (i.e. 16 * 15 paths due to the origin)
         // Max value is reserved for "no path"
-        uint_8 _currentPathIndex;
+        uint8 _currentPathIndex;
 
     #else
 
