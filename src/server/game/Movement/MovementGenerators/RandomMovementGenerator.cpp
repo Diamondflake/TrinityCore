@@ -201,9 +201,10 @@ void RandomMovementGenerator<Creature>::SetRandomLocation(Creature* owner)
 
 #else
 
-    Position position = _randomPoints[urand(0, RANDOM_MOVEMENT_POINTS - 1)];
-    _path->CalculatePath(position.GetPositionX(), position.GetPositionY(), position.GetPositionZ());
-    // Should not be able to fail
+    // There are RANDOM_MOVEMENT_POINTS other points because the _reference is included
+    uint_8 currentPathEndPoint = _currentPathIndex / RANDOM_MOVEMENT_POINTS;
+    uint_8 nextPathEndPoint = urand(0, RANDOM_MOVEMENT_POINTS - 1);
+    _currentPathIndex = currentPathEndPoint * RANDOM_MOVEMENT_POINTS + nextPathEndPoint;
 
 #endif
 
@@ -225,7 +226,13 @@ void RandomMovementGenerator<Creature>::SetRandomLocation(Creature* owner)
     }
 
     Movement::MoveSplineInit init(owner);
+    
+#if DONT_CACHE_RANDOM_MOVEMENT_PATHS == 1
     init.MovebyPath(_path->GetPath());
+#else
+    init.MovebyPath(_paths[_currentPathIndex]->GetPath());
+#endif
+    
     init.SetWalk(walk);
     int32 splineDuration = init.Launch();
 
