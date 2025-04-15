@@ -145,7 +145,7 @@ void RandomMovementGenerator<Creature>::DoInitialize(Creature* owner)
                     acceptable = false;
                     break;
                 }
-                paths[i * RANDOM_MOVEMENT_POINTS + j] = path;
+                paths[i * RANDOM_MOVEMENT_POINTS + j] = path; // TODO: Optimisation: Add function to reverse path and use it to halve the time taken
             }
         }
         
